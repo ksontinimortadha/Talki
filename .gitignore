@@ -1,0 +1,27 @@
+# Ignore compiled binaries
+*.exe
+*.dll
+
+# Ignore log files
+*.log
+
+# Ignore macOS system files
+.DS_Store
+
+# Ignore Node.js dependencies
+node_modules/
+
+# Ignore Python virtual environment
+venv/
+
+# Ignore IDE specific files (for example, Visual Studio Code)
+.vscode/
+
+# Ignore environment files
+.env
+
+# Ignore package-lock.json for npm
+package-lock.json
+
+# Ignore Jupyter notebook checkpoints
+.ipynb_checkpoints/
