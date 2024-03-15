@@ -102,6 +102,44 @@ io.on("connection", async (socket) => {
     });
   });
 
+  socket.on("start_conversation", async (data) => {
+    const { to, from } = data;
+
+    // check if there is any existing conversation
+    const existing_conversations = await OneToOneMessage.find({
+      participants: { $size: 2, $all: [to, from] },
+    }).populate("participants", "firstName lastName _id email status");
+    console.log(existing_conversations[0], "Existing Conversation");
+
+    // if no => create a new OneToOneMessage doc & emit event "start_chat" & send conversation details as payload
+    if (existing_conversations.length === 0) {
+      let new_chat = await OneToOneMessage.create({
+        participants: [to, from],
+      });
+      new_chat = await OneToOneMessage.findById(new_chat._id).populate(
+        "participants",
+        "firstName lastName _id email status"
+      );
+      console.log(new_chat);
+      socket.emit("start_chat", new_chat);
+    }
+    // if yes => just emit event "start_chat" & send conversation details as payload
+    else {
+      socket.emit("start_chat", existing_conversations[0]);
+    }
+  });
+
+  socket.on("get_messages", async (data, callback) => {
+    try {
+      const { messages } = await OneToOneMessage.findById(
+        data.conversation_id
+      ).select("messages");
+      callback(messages);
+    } catch (error) {
+      console.log(error);
+    }
+  });
+
   // Handle incoming text/link messages
   socket.on("text_message", async (data) => {
     console.log("Received message:", data);
@@ -140,17 +178,15 @@ io.on("connection", async (socket) => {
     });
   });
 
-socket.on("get_direct_conversations", async ({ user_id }, callback) => {
-  const existing_conversations = await OneToOneMessage.find({
-    participants: { $all: [user_id] },
-  }).populate("participants", "firstName lastName avatar _id email status");
+  socket.on("get_direct_conversations", async ({ user_id }, callback) => {
+    const existing_conversations = await OneToOneMessage.find({
+      participants: { $all: [user_id] },
+    }).populate("participants", "firstName lastName avatar _id email status");
 
-  // db.books.find({ authors: { $elemMatch: { name: "John Smith" } } })
+    console.log(existing_conversations);
 
-  console.log(existing_conversations);
-
-  callback(existing_conversations);
-});
+    callback(existing_conversations);
+  });
 
   // handle Media/Document Message
   socket.on("file_message", (data) => {
